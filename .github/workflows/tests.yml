@@ -21,4 +21,20 @@
 # SPDX-License-Identifier: GPL-3.0
 
 # ============================================================================
-from boltsta import readers
+
+name: tests
+on:
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 12
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: tests with pytest
+        run: |
+          make tests

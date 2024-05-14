@@ -46,7 +46,10 @@ lint_python: env
 # ============================
 # ------- BOLTSTA TEST -------
 # ============================
-
+.ONESHELL:
+tests: env
+	@export PYTHONPATH=$(PYTHONPATH):$(TOP_DIR)
+	@. $(VENV_RUN_COMMAND); pytest
 
 # =================
 # ----- Clean -----
