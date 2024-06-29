@@ -1,10 +1,36 @@
 from collections import deque
 from .graph_creator import graph_creation_func
+from .fanout import get_fanout_dict
 import networkx as nx
 
 
-#1
-def find_all_paths_non_rec_pro(G, cell_attr_name: str, targets_file_name: str,mode: str = 'RR', show_steps: int = False):
+# 1
+def create_adjacency_dict(G, cell_attr_name):
+    """
+    Creates an adjacency dictionary for path detection in a graph.
+
+    The keys of the dictionary are all the nodes in the graph,
+    and the values are lists of the very next nodes connected to the key node (the next level directly).
+    Each node and its neighbors are represented in the format 'node,cell_attr_value'.
+
+    Parameters:
+    G (networkx.Graph): The graph representing the design.
+    cell_attr_name (str): The name of the attribute to be concatenated with the node name.
+
+    Returns:
+    dict: An adjacency dictionary with nodes and their direct neighbors.
+    """
+    adjacency_dict = {}
+    for node in G.nodes():
+        node_attrs = G.nodes[node]
+        node_info = f"{node},{node_attrs[cell_attr_name]}"
+        adjacency_dict[node_info] = [
+            f"{neighbor},{G.nodes[neighbor][cell_attr_name]}" for neighbor in G.neighbors(node)
+        ]
+    return adjacency_dict
+
+#2
+def find_all_paths_non_rec_pro(adjacency_dict, targets_file_name: str,mode: str = 'RR', show_steps: int = False):
     """
     Finds all paths from source nodes to targets in a networkx graph based on the specified mode.
 
@@ -20,14 +46,14 @@ def find_all_paths_non_rec_pro(G, cell_attr_name: str, targets_file_name: str,mo
         list: A list of lists containing all the possible paths.
     """
 
-    adjacency_dict = {}
-    # Filling adjacency dictionary with node names concatenated with attribute values
-    for node in G.nodes():
-        node_attrs = G.nodes[node]
-        node_info = f"{node},{node_attrs[cell_attr_name]}"
-        adjacency_dict[node_info] = [
-            f"{neighbor},{G.nodes[neighbor][cell_attr_name]}" for neighbor in G.neighbors(node)
-        ]
+    # adjacency_dict = {}
+    # # Filling adjacency dictionary with node names concatenated with attribute values
+    # for node in G.nodes():
+    #     node_attrs = G.nodes[node]
+    #     node_info = f"{node},{node_attrs[cell_attr_name]}"
+    #     adjacency_dict[node_info] = [
+    #         f"{neighbor},{G.nodes[neighbor][cell_attr_name]}" for neighbor in G.neighbors(node)
+    #     ]
 
     if show_steps:
         print(f'step1 adj_dict = {adjacency_dict}\n')
@@ -110,7 +136,7 @@ def find_all_paths_non_rec_pro(G, cell_attr_name: str, targets_file_name: str,mo
     print(f'total number of paths: {len(all_paths)}')
     return all_paths
 
-# 2
+# 3
 # function that creates a list of lists holding the "input_pins" attribute for each path
 def get_input_attr(G, paths):
     """
@@ -154,7 +180,7 @@ def get_input_attr(G, paths):
 
 
 
-#3 main function 
+#4 main function 
 def all_paths_info(G):
     """
     Extracts and returns all types of paths (reg-reg, in-reg, and reg-out) 
@@ -165,8 +191,13 @@ def all_paths_info(G):
     attributes. The function relies on helper functions `find_all_paths_non_rec_pro` 
     and `get_input_attr` to accomplish these tasks.
 
-    Arguments:
-    G : NetworkX graph
+    The adjacency dictionary used in this function is structured as follows:
+    - The keys are all the nodes in the graph, in the format 'node,cell_type'.
+    - The values are lists of the very next nodes connected to the key node (the next level directly), 
+      each in the format 'node,cell_type'.
+
+    Parameters:
+    G : networkx.Graph
         The input graph from which paths are to be extracted.
 
     Returns:
@@ -183,20 +214,23 @@ def all_paths_info(G):
             List of reg-out paths.
         ro_attr_list : list
             List of attributes for reg-out paths.
+        adjacency_dict : dict
+            The adjacency dictionary with nodes and their direct neighbors.
     """
     targets_file_name = 'ff_names.txt'
-    reg_reg = find_all_paths_non_rec_pro(G, 'cell', targets_file_name, 'RR')
-    in_reg = find_all_paths_non_rec_pro(G, 'cell', targets_file_name, 'IR')
-    reg_out = find_all_paths_non_rec_pro(G, 'cell', targets_file_name, 'RO')
+    adjacency_dict = create_adjacency_dict(G, 'cell')
+    reg_reg = find_all_paths_non_rec_pro(adjacency_dict, targets_file_name, 'RR')
+    in_reg = find_all_paths_non_rec_pro(adjacency_dict, targets_file_name, 'IR')
+    reg_out = find_all_paths_non_rec_pro(adjacency_dict, targets_file_name, 'RO')
 
     rr_attr_list = get_input_attr(G, reg_reg)
     ir_attr_list = get_input_attr(G, in_reg)
     ro_attr_list = get_input_attr(G, reg_out)
 
-    return reg_reg, rr_attr_list, in_reg, ir_attr_list, reg_out, ro_attr_list
+    return reg_reg, rr_attr_list, in_reg, ir_attr_list, reg_out, ro_attr_list, adjacency_dict
 
 
-# 4
+# 5
 def graph_path_handler(file_path: str):
     """
     COMBO function combines the graph creation and path detection processes.
@@ -218,6 +252,7 @@ def graph_path_handler(file_path: str):
         ro_atr_list - List of attributes for reg-out paths
     """
     G = graph_creation_func(file_path)
-    rr, rr_atr_list, ir, ir_atr_list, ro, ro_atr_list = all_paths_info(G)
+    rr, rr_atr_list, ir, ir_atr_list, ro, ro_atr_list, adjacency_dict = all_paths_info(G) 
+    fanout_dict = get_fanout_dict(G, adjacency_dict)
 
-    return rr, rr_atr_list, ir, ir_atr_list, ro, ro_atr_list
+    return rr, rr_atr_list, ir, ir_atr_list, ro, ro_atr_list, fanout_dict
