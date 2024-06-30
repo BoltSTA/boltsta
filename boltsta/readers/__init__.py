@@ -7,3 +7,4 @@ from .verilog_reader import modify_input_pins
 from .verilog_reader import extract_mod_input_pins
 from .verilog_reader import extract_unique_internal_nodes
 from .verilog_reader import find_partial_match
+from .liberty_parser import parse_liberty_file
