@@ -1,7 +1,8 @@
 import re  # Regular expressions library for pattern matching and string manipulation
 import os  # OS library for file handling operations
 import numpy as np  # NumPy library for numerical operations and array handling
-from verilog_parser.parser import parse_verilog  # Importing a Verilog parser from an external module
+from verilog_parser.parser import parse_verilog  # Importing the external Verilog parser
+
 
 def preprocess_verilog(file_path):
     """
@@ -23,30 +24,33 @@ def preprocess_verilog(file_path):
     try:
         # Check if the file exists
         if not os.path.exists(file_path):
-            raise FileNotFoundError(f"The file {file_path} does not exist.")  # Raise an error if the file is not found
-
+            # Raise an error if the file is not found
+            raise FileNotFoundError(f"The file {file_path} does not exist.")
         # Try to open and read the file content
         with open(file_path, "r") as file:
             content = file.read()  # Read the content of the file
             if not isinstance(content, str) or not content:
-                raise ValueError("The netlist must be a non-empty file.")  # Raise an error if file is not valid
+                # Raise an error if file is not valid
+                raise ValueError("The netlist must be a non-empty file.")
 
         # Remove backslashes before port names
         content = content.replace("\\", "")  # Replace all backslashes with an empty string
 
         # Replace '.' between two identifiers with '___'
-        content = re.sub(r"(?<=\w)\.(?=\w)", "___", content)  # Replace '.' between word characters with '___'
+        content = re.sub(r"(?<=\w)\.(?=\w)", "___", content)
 
         # Replace identifier[index].identifier with identifier__index___identifier
-        content = re.sub(r"(\w+)\[(\d+)\]\.(\w+)", r"\1__\2___\3", content)  # Handle array indices with dot notation
+        content = re.sub(r"(\w+)\[(\d+)\]\.(\w+)", r"\1__\2___\3", content)
 
         # Replace identifier[index] with identifier__index
-        content = re.sub(r"(\w+)\[(\d+)\]", r"\1__\2", content)  # Handle array indices without dot notation
+        content = re.sub(r"(\w+)\[(\d+)\]", r"\1__\2", content)
 
         return content  # Return the preprocessed Verilog content
 
     except Exception as e:
-        raise IOError(f"Error processing the file {file_path}: {e}")  # Raise an error if there is an issue processing the file
+        # Raise an error if there is an issue processing the file
+        raise IOError(f"Error processing the file {file_path}: {e}")
+
 
 def parse_modified_verilog(content):
     """
@@ -67,7 +71,8 @@ def parse_modified_verilog(content):
     try:
         # Check if content is a non-empty string
         if not isinstance(content, str) or not content:
-            raise ValueError("The content must be a non-empty string.")  # Raise an error if content is not valid
+            # Raise an error if content is not valid
+            raise ValueError("The content must be a non-empty string.")
 
         # Create and open a new file called "modified_file.v" in write mode
         with open("modified_file.v", "w") as file:
@@ -80,12 +85,14 @@ def parse_modified_verilog(content):
         return ast  # Return the AST for further processing
 
     except Exception as e:
-        raise IOError(f"Error parsing the modified Verilog content: {e}")  # Raise an error if parsing fails
+        # Raise an error if parsing fails
+        raise IOError(f"Error parsing the modified Verilog content: {e}")
 
     finally:
         # Ensure the temporary file is removed after parsing
         if os.path.exists("modified_file.v"):
             os.remove("modified_file.v")  # Clean up by removing the temporary file
+
 
 def extract_input_output_ports(ast):
     """
@@ -103,7 +110,8 @@ def extract_input_output_ports(ast):
     try:
         # Check if AST is of expected structure
         if not hasattr(ast, 'modules') or not ast.modules:
-            raise ValueError("Invalid Netlist structure.")  # Raise an error if the AST structure is not valid
+            # Raise an error if the AST structure is not valid
+            raise ValueError("Invalid Netlist structure.")
 
         # Initialize empty lists to store input and output ports
         input_list = []  # List to hold input ports
@@ -120,7 +128,9 @@ def extract_input_output_ports(ast):
         return input_list, output_list  # Return the input and output port lists
 
     except Exception as e:
-        raise ValueError(f"Error extracting input and output ports: {e}")  # Raise an error if there is an issue extracting ports
+        # Raise an error if there is an issue extracting ports
+        raise ValueError(f"Error extracting input and output ports: {e}")
+
 
 def extract_input_output_pins_of_cells(ast):
     """
@@ -139,14 +149,19 @@ def extract_input_output_pins_of_cells(ast):
     try:
         # Check if AST is of expected structure
         if not hasattr(ast, 'modules') or not ast.modules:
-            raise ValueError("Invalid Netlist structure.")  # Raise an error if the AST structure is not valid
+            # Raise an error if the AST structure is not valid
+            raise ValueError("Invalid Netlist structure.")
 
         # Initialize empty lists to store input and output pins
         input_pins = []  # List to hold input pins
         output_pins = []  # List to hold output pins
-
+        # Initialize an empty list to store internal nets
+        nets = []  # List to hold internal nets
         # Loop through module instances in the AST
         for inst in ast.modules[0].module_instances:
+            # Loop through ports of the current instance and add them to nets list
+            for port, node in inst.ports.items():
+                nets.append(str(node))  # Append each port node to the nets list
             # Get a list of port names for the current instance
             a = list(inst.ports.keys())  # List of ports for the current instance
             # The last port in the list is considered an output pin
@@ -169,50 +184,18 @@ def extract_input_output_pins_of_cells(ast):
             output_pins.remove("RESET_B")  # Remove 'RESET_B' from output pins if present
         output_pins.append("Q")  # Ensure 'Q' is in the output pins list
 
-        return input_pins, output_pins  # Return the input and output pin lists
+        return input_pins, output_pins, nets  # Return the input and output pin lists
 
     except Exception as e:
-        raise ValueError(f"Error extracting input and output pins of cells: {e}")  # Raise an error if there is an issue extracting pins
+        # Raise an error if there is an issue extracting pins
+        raise ValueError(f"Error extracting input and output pins of cells: {e}")
 
-def extract_design_internal_nets(ast):
-    """
-    Extracts the design internal nets (nodes).
-
-    Args:
-        ast (object): The netlist handler (AST).
-
-    Returns:
-        list: List containing design internal nets.
-
-    Raises:
-        ValueError: If the AST structure is invalid.
-    """
-    try:
-        # Check if AST is of expected structure
-        if not hasattr(ast, 'modules') or not ast.modules:
-            raise ValueError("Invalid Netlist structure.")  # Raise an error if the AST structure is not valid
-
-        # Initialize an empty list to store internal nets
-        nets = []  # List to hold internal nets
-
-        # Loop through module instances in the AST
-        for instance in ast.modules[0].module_instances:
-            # Loop through ports of the current instance and add them to nets list
-            for port, node in instance.ports.items():
-                nets.append(str(node))  # Append each port node to the nets list
-
-        return nets  # Return the list of internal nets
-
-    except Exception as e:
-        raise ValueError(f"Error extracting design internal nets: {e}")  # Raise an error if there is an issue extracting nets
 
 def modify_input_pins(ast, input_pins, output_pins):
     """
-    Modifies the input pins of the design by 
-    adding the corresponding output pin as a prefix.
-    This modification is made to facilitate the STA calculation
-    and to pass the modified graph to the STA function.
-    
+    Modifies the input pins of the design by adding the corresponding output pin as a prefix.
+    This modification is made to facilitate the STA calculation and to pass the modified
+    graph to the STA function.
     Args:
         ast (ast): the netlist handler
         input_pins (list): List of input pins.
@@ -220,17 +203,17 @@ def modify_input_pins(ast, input_pins, output_pins):
 
     Returns:
         list: Modified input pins list.
-    
     Raises:
         ValueError: If input_pins or output_pins is not a list.
     """
     try:
         if not hasattr(ast, 'modules') or not ast.modules:
-            raise ValueError("Invalid Netlist structure.")  # Raise an error if the AST structure is not valid
+            # Raise an error if the AST structure is not valid
+            raise ValueError("Invalid Netlist structure.")
 
         if not isinstance(input_pins, list) or not isinstance(output_pins, list):
-            raise ValueError("input_pins and output_pins must be lists.")  # Raise an error if inputs are not valid lists
-        
+            # Raise an error if inputs are not valid lists
+            raise ValueError("input_pins and output_pins must be lists.")
         # Access the first module in the AST
         module = ast.modules[0]
 
@@ -242,7 +225,6 @@ def modify_input_pins(ast, input_pins, output_pins):
 
             # Determine the output pin of the instance
             output_pin = list(connections.keys())[-1]
-            
             # Special case handling for "RESET_B" as it should not be used as the output pin
             if output_pin == "RESET_B":
                 output_pin = "Q"
@@ -268,9 +250,10 @@ def modify_input_pins(ast, input_pins, output_pins):
     except Exception as e:
         raise Exception(f"Error in modify_input_pins: {e}")
 
+
 def extract_mod_input_pins(ast):
     """
-    Extracts the modified input pins of the design cells 
+    Extracts the modified input pins of the design cells
     by adding the corresponding output pin as a prefix.
     This is done again to remove the output 'Q' from these
     modified inputs and deal with the correct version of
@@ -288,35 +271,44 @@ def extract_mod_input_pins(ast):
     try:
         # Check if AST is of expected structure
         if not hasattr(ast, 'modules') or not ast.modules:
-            raise ValueError("Invalid Netlist structure.")  # Raise an error if the AST structure is not valid
+            # Raise an error if the AST structure is not valid
+            raise ValueError("Invalid Netlist structure.")
 
         # Initialize an empty list to store modified input pins
         mod_input_pins = []  # List to hold modified input pins
-
+        # Initialize a dictionary to map ports to instance names
+        port_to_node_to_instance = {}  # Dictionary to map ports to instances
         # Loop through module instances in the AST
         for inst in ast.modules[0].module_instances:
             # Get a list of port names for the current instance
             a = list(inst.ports.keys())  # List of ports for the current instance
             # Loop through all but the last port to consider them as input pins
             for i in np.arange(len(a) - 1):
-                mod_input_pins.append(a[i])  # Append each port name to the list of modified input pins
+                # Append each port name to the list of modified input pins
+                mod_input_pins.append(a[i])
                 # Modify the input pin name by adding the output pin as a prefix
                 a[i] = a[-1] + "_" + a[i]  # Combine output pin name with input pin name
+            # Loop through module instances in the AST
+            # Loop through ports of the current instance and add them to the dictionary
+            for port, node in inst.ports.items():
+                port_to_node_to_instance.setdefault(str(node), []).append(
+                    (inst.instance_name, inst.module_name, port)  # Map port to instance and module
+                )
 
         # Remove duplicate pins by converting the list to a set
-        mod_input_pins = list(set(mod_input_pins))  # Remove duplicates from the modified input pins list
+        mod_input_pins = list(set(mod_input_pins))
 
         # Special handling to remove 'Q' from the modified input pins
         if "Q" in mod_input_pins:
             mod_input_pins.remove("Q")  # Remove 'Q' from the modified input pins if present
 
         # Return the list of modified input pins
-        return mod_input_pins  # Return the modified input pins list
-    
+        return mod_input_pins, port_to_node_to_instance  # Return the modified input pins list
     except Exception as e:
         raise Exception(f"Error in extract_mod_input_pins: {e}")
 
-def extract_unique_internal_nodes(ast, mod_input_pins):
+
+def extract_unique_internal_nodes(ast, mod_input_pins, port_to_node_to_instance):
     """
     Extracts the unique internal connections of the
     verilog design. These connections are to be used to build
@@ -329,7 +321,8 @@ def extract_unique_internal_nodes(ast, mod_input_pins):
         mod_input_pins (list): List containing cells' modified input pins.
 
     Returns:
-        tuple: A tuple containing the list of unique internal connections and the port-to-instance mapping.
+        tuple: A tuple containing the list of unique internal connections
+        and the port-to-instance mapping.
 
     Raises:
         ValueError: If the AST structure is invalid or mod_input_pins is not a list.
@@ -337,36 +330,24 @@ def extract_unique_internal_nodes(ast, mod_input_pins):
     try:
         # Check if AST is of expected structure
         if not hasattr(ast, 'modules') or not ast.modules:
-            raise ValueError("Invalid Netlist structure.")  # Raise an error if the AST structure is not valid
+            # Raise an error if the AST structure is not valid
+            raise ValueError("Invalid Netlist structure.")
 
         # Check if mod_input_pins is a list
         if not isinstance(mod_input_pins, list):
-            raise ValueError("Modified input pins must be a list.")  # Raise an error if mod_input_pins is not a list
-        
+            # Raise an error if mod_input_pins is not a list
+            raise ValueError("Modified input pins must be a list.")
         # Get all signal names from net declarations in the AST
-        all_signals = [declaration.net_name for declaration in ast.modules[0].net_declarations]  # List of all signals
+        all_signals = [declaration.net_name for declaration in ast.modules[0].net_declarations]
 
         # Get the internal nodes by excluding port names from the signal names
-        internal_nodes = set(all_signals) - set(ast.modules[0].port_list)  # Internal nodes are signals not in the port list
-
-        # Initialize a dictionary to map ports to instance names
-        port_to_node_to_instance = {}  # Dictionary to map ports to instances
-
-        # Loop through module instances in the AST
-        for instance in ast.modules[0].module_instances:
-            # Loop through ports of the current instance and add them to the dictionary
-            for port, node in instance.ports.items():
-                port_to_node_to_instance.setdefault(str(node), []).append(
-                    (instance.instance_name, instance.module_name, port)  # Map port to instance and module
-                )
-
+        internal_nodes = set(all_signals) - set(ast.modules[0].port_list)
         # Initialize a list to store internal connections
         internal_connections = []  # List to hold internal connections
-
         # Loop through internal nodes
         for k in internal_nodes:
             # Get the connections for the current node from the dictionary
-            connections = port_to_node_to_instance.get(k, [])  # Get connections for the current node
+            connections = port_to_node_to_instance.get(k, [])
             # Loop through the connections to find pairs of connected instances
             for i, (conn1, module1, port1) in enumerate(connections):
                 for conn2, module2, port2 in connections[i + 1:]:
@@ -375,16 +356,18 @@ def extract_unique_internal_nodes(ast, mod_input_pins):
                         continue  # Skip if both ports are modified input pins
                     # Handle special case where 'Q' is an output pin
                     if port2 == "Q":
-                        internal_connections.append([conn2, module2, conn1, module1, port1])  # Handle special case for 'Q'
+                        # Handle special case for 'Q'
+                        internal_connections.append([conn2, module2, conn1, module1, port1])
                     else:
-                        internal_connections.append([conn1, module1, conn2, module2, port2])  # Add the connection
+                        # Add the connection
+                        internal_connections.append([conn1, module1, conn2, module2, port2])
 
         # Return the list of internal connections and the port-to-instance mapping
-        return internal_connections, port_to_node_to_instance  # Return internal connections and port-to-instance mapping
+        return internal_connections
 
-    
     except Exception as e:
         raise Exception(f"Error in extract_unique_internal_nodes: {e}")
+
 
 def find_partial_match(nets, input_list):
     """
@@ -404,10 +387,11 @@ def find_partial_match(nets, input_list):
     """
     try:
         # Check if nets and input_list are lists
-        if not isinstance(nets, list|type({}.keys())) or not isinstance(input_list, list):
-            raise ValueError("Nets must be list or dict_keys and input_list must be list.")  # Raise an error if nets isn't list or dict_keys or input_list is not list
+        if not isinstance(nets, list | type({}.keys())) or not isinstance(input_list, list):
+            # Raise an error if nets isn't list or dict_keys or input_list is not list
+            raise ValueError("Nets must be list or dict_keys and input_list must be list.")
         # Create a regex pattern to match any item in input_list with optional suffixes
-        pattern = "|".join(r"\b{}(?:__[0-9]+)?\b".format(re.escape(item)) for item in input_list)  # Build regex pattern
+        pattern = "|".join(r"\b{}(?:__[0-9]+)?\b".format(re.escape(item)) for item in input_list)
         # Compile the regex pattern
         regex = re.compile(pattern)  # Compile the regex pattern
         # Find all matches of the pattern in the concatenated string of nets
@@ -416,7 +400,5 @@ def find_partial_match(nets, input_list):
         # Return the list of matching elements
         return list(output)  # Return the list of matching elements
 
-    
     except Exception as e:
         raise Exception(f"Error in find_partial_match: {e}")
-    

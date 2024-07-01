@@ -7,6 +7,7 @@ def remove_whitespace(text):
     """Remove all whitespace characters from the given text."""
     return re.sub(r'\s+', '', text)     # Remove all whitespace characters
 
+
 @pytest.mark.parametrize("verilog_file, expected_output", [
     ("tests/test_readers/test.v", """
     module DigCt(IN, CLK, OUT1, OUT2, OUT3);
@@ -122,6 +123,7 @@ def test_preprocess_verilog(verilog_file, expected_output):
     actual_output_cleaned = remove_whitespace(actual_output)  # Remove whitespace for comparison
     expected_output_cleaned = remove_whitespace(expected_output)  # Clean expected output
     assert actual_output_cleaned == expected_output_cleaned  # Assert equal after cleaning
+
 
 if __name__ == '__main__':
     pytest.main()
