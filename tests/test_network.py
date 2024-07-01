@@ -26,7 +26,7 @@ class TestNetwork(unittest.TestCase):
 
     def test_build_digraph(self):
         print("test build_digraph")
-    # -------------- First Test --------------
+    # -------------- First Test -------------- #
         print("First actual test on ClkDiv.v")
         graph_props = bs.build_digraph(self.ast, self.internal_connections,
                                        self.input_list, self.output_list,
@@ -101,6 +101,7 @@ class TestNetwork(unittest.TestCase):
 
     def test_graph_creation_func(self):
         print("test graph_creation_func")
+        # -------------- First Test -------------- #
         g = bs.graph_creation_func(self.file_path)
         self.assertIsInstance(g, nx.DiGraph)
 
