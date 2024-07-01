@@ -33,6 +33,7 @@ class TestNetwork(unittest.TestCase):
                                        self.port_to_node_to_instance,
                                        self.mod_input_pins)
         g, pos, node_cells, edge_labels = graph_props
+        # print(edge_labels)
         # Checking output data types
         self.assertIsInstance(g, nx.DiGraph)
         self.assertIsInstance(pos, dict)
@@ -91,6 +92,12 @@ class TestNetwork(unittest.TestCase):
         self.assertEqual(g_test.edges[('2', 'out2')], {})
 
         # --- Testing correct output lists ---
+        self.assertEqual(node_cells_test, {'in1': 'Input', 'in2': 'Input',
+                                           'out1': 'Output', 'out2': 'Output',
+                                           '1': 'sky_AND', '2': 'sky_OR'})
+        self.assertEqual(edge_labels_test, {('in1', '1'): 'X_A',
+                                            ('in2', '2'): 'X_B',
+                                            ('1', '2'): 'X_A'})
 
     def test_graph_creation_func(self):
         print("test graph_creation_func")
