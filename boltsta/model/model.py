@@ -1,5 +1,6 @@
 from typing import Dict, Tuple
 from ..utils import *
+from ..network import fanout
 
 
 def calculate_combinational_delay(
@@ -342,3 +343,115 @@ def check_timing(
             )  # Append the path and the destination flip-flop
 
     return setup_violations
+
+
+def build_paths_delay_dict1(
+    paths: list[list[str]],
+    paths_attributes: list[list[str]],
+    cell_pin_mapping: dict[str, dict[str, dict[str, dict[str, float]]]],
+    library: str,
+    related_pin_time: float = 0.04,
+    input_transition_time: float = 1.5,
+) -> dict:
+    """
+    Constructs a dictionary mapping paths to their corresponding delays.
+
+    Args:
+        paths (list[list[str]]): A list of paths, where each path is a list of cell names.
+        paths_attributes (list[list[str]]): A list of pin names for each cell in path list.
+        cell_pin_mapping (dict[str, dict[str, dict[str, dict[str, float]]]]):
+            A dictionary containing timing data for each cell in the library.
+        library (str): The library used.
+        related_pin_time (float): The related pin transition time used for setup constraint calculation.
+        input_transition_time (float): The initial input transition time.
+
+    Returns:
+        dict: A dictionary where keys are path identifiers (e.g., "path1") and values are dictionaries
+              mapping cell names to their delays.
+    """
+
+    # Initialize the dictionary to store delays for each path
+    paths_delay = {}
+
+    # Iterate over each path and its attributes
+    for path_index, path in enumerate(paths):
+        path_attr = paths_attributes[path_index]
+        path_key = f"path{path_index + 1}"  # Construct the path key (e.g., "path1")
+        paths_delay[path_key] = {}
+
+        # Skip paths with no attributes
+        if path_attr[0] is None:
+            continue
+
+        # Iterate over each cell in the path
+        for cell_index, cell in enumerate(path):
+            # Extract the cell name from the cell string
+            cell_name = cell.split(",")[1]
+            x = fanout[cell]
+
+            # to handle an error in the path
+            if x[0].split(",")[1] == "Output":
+                continue
+
+            # Calculate the output capacitance for the current cell
+            out_cap = get_output_capacitance(
+                fanout=fanout[cell],
+                library=library,
+            )
+
+            if cell_index == 0:
+                # Calculate clk-to-q delay for the first cell in the path
+                transition_delay, delay = calculate_clk2q_delay(
+                    cell_timing_data=cell_pin_mapping,
+                    cell_name=cell_name,
+                    input_transition_time=input_transition_time,
+                    output_capacitance=out_cap,
+                )
+            elif cell_index == len(path) - 1:
+                # Calculate setup constraint time for the last cell in the path
+                delay = calculate_constraint_time(
+                    cell_name=cell_name,
+                    checking_type="setup_checking",
+                    input_pin="D",
+                    library_name=library,
+                    constrained_pin_transition=last_cell_trans,
+                    related_pin_transition=related_pin_time,
+                )
+            else:
+                # Calculate combinational delay for intermediate cells
+                if cell_index == 1:
+                    trans_type = "rise"
+                    transition_time = transition_delay
+                time_sense = get_timing_sense(
+                    cell_name=cell_name,
+                    input_pin_name=path_attr[cell_index - 1],
+                    cells_info=cell_pin_mapping,
+                )
+
+                transition_time, delay, trans_type = calculate_combinational_delay(
+                    cell_pin_mapping=cell_pin_mapping,
+                    cell_name=cell_name,
+                    input_pin_name=path_attr[cell_index - 1],
+                    transition_type=trans_type,
+                    timing_sense=time_sense,
+                    output_capacitance=out_cap,
+                    input_transition_time=transition_time,
+                )
+
+                if cell_index == len(path) - 2:
+                    last_cell_trans = transition_time
+
+            # Ensure delay is a scalar value
+            if isinstance(delay, np.ndarray):
+                delay = delay.item()
+
+            delay = round(delay, 6)
+
+            # Store the delay in the paths_delay dictionary
+            if cell_index == len(path) - 1:
+                uniq_name = f"{cell},end"
+                paths_delay[path_key][uniq_name] = delay
+            else:
+                paths_delay[path_key][cell] = delay
+
+    return paths_delay

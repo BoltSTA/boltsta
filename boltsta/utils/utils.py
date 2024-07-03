@@ -1,5 +1,6 @@
 import numpy as np
 from liberty.types import *
+from tabulate import tabulate
 
 
 # Function to concatenate pin name and related pin with an underscore
@@ -326,3 +327,144 @@ def interpolate_constraint_time(
         related_pin_transition,
         constrained_pin_transition,
     )
+
+
+def generate_timing_report(
+    delays: dict,
+    output_file: str,
+    clock_rise_edge: float = 0.0,
+    clock_network_delay: float = 0.0,
+    clock_uncertainty: float = 0.3,
+    clock_period: float = 10.0,
+):
+    """
+    Generates a timing report for the given delays using the tabulate library and writes it to a text file.
+
+    Args:
+        delays (dict): A dictionary where keys are path identifiers (e.g., "path1") and values
+                       are dictionaries mapping cell names to their delays.
+        output_file (str): The file path where the timing report will be written.
+        clock_rise_edge (float): Delay of clock rise edge.
+        clock_network_delay (float): Delay of clock path.
+        clock_uncertainty (float): Clock uncertainty.
+        clock_period (float): Clock period.
+
+    Returns:
+        None
+    """
+
+    with open(output_file, "w") as file:
+        # Iterate over each path and its cell delays
+        for path_key, cells_delay in delays.items():
+            if not cells_delay:
+                continue  # Skip empty paths
+
+            # Check if cells_delay has valid keys
+            cell_keys = list(cells_delay.keys())
+            if not cell_keys:
+                continue
+
+            startpoint = cell_keys[0].split(",")[0]
+            endpoint = cell_keys[-1].split(",")[0]
+
+            # Print start and end points
+            print(
+                f"Startpoint: {startpoint} (rising edge-triggered flip-flop clocked by core_clock)",
+                file=file,
+            )
+            print(
+                f"Endpoint: {endpoint} (rising edge-triggered flip-flop clocked by core_clock)",
+                file=file,
+            )
+            print("Path Group: core_clock", file=file)
+            print("Path Type: max\n", file=file)
+
+            headers = ["Point", "Incr", "Path"]
+            table = []
+
+            # Initial conditions
+            path_delay = 0.00
+
+            # Add initial clock conditions to the table
+            table.append(
+                [
+                    "clock CLKM (rise edge)",
+                    f"{clock_rise_edge:.4f}",
+                    f"{clock_rise_edge:.4f}",
+                ]
+            )
+            table.append(
+                [
+                    "clock network delay (ideal)",
+                    f"{clock_network_delay:.4f}",
+                    f"{clock_network_delay:.4f}",
+                ]
+            )
+
+            # Iterate over cells in the path (excluding the last cell)
+            items_to_iterate = list(cells_delay.items())[:-1]
+            for index, (cell, delay) in enumerate(items_to_iterate):
+                if index == 0:  # Special handling for the first cell
+                    modified_name = f"{cell_keys[0].split(',')[0]}/Clk2Q"
+                    table.append(
+                        [modified_name, f"{delay:.4f}", f"{path_delay + delay:.4f}"]
+                    )
+                else:
+                    table.append(
+                        [
+                            cell.split(",")[0] + "/" + cell.split(",")[1],
+                            f"{delay:.4f}",
+                            f"{path_delay + delay:.4f}",
+                        ]
+                    )
+                path_delay += delay
+
+            # Add data arrival time to the table
+            table.append(["data arrival time", "", f"{path_delay:.4f}"])
+
+            # Calculate and add data required time to the table
+            table.append(
+                [
+                    "clock period (rise edge)",
+                    f"{clock_period:.4f}",
+                    f"{clock_period:.4f}",
+                ]
+            )
+            data_required_time = clock_period - clock_network_delay
+            table.append(
+                [
+                    "clock network delay (ideal)",
+                    f"{clock_network_delay:.4f}",
+                    f"{data_required_time:.4f}",
+                ]
+            )
+            data_required_time -= clock_uncertainty
+            table.append(
+                [
+                    "clock uncertainty",
+                    f"{-clock_uncertainty:.4f}",
+                    f"{data_required_time:.4f}",
+                ]
+            )
+
+            # Adjust data required time for setup time
+            setup_time = cells_delay[cell_keys[-1]]
+            data_required_time -= setup_time
+            table.append(
+                ["setup_time", f"{-setup_time:.4f}", f"{data_required_time:.4f}"]
+            )
+
+            # Add final data required and arrival times to the table
+            table.append(["----------------------------", "-------", "--------"])
+            table.append(["data required time", "", f"{data_required_time:.4f}"])
+            table.append(["data arrival time", "", f"{-path_delay:.4f}"])
+            table.append(["----------------------------", "-------", "--------"])
+
+            # Calculate and add slack to the table
+            slack = data_required_time - path_delay
+            slack_status = "MET" if slack >= 0 else "VIOLATE"
+            table.append([f"slack ({slack_status})", "", f"{slack:.4f}"])
+
+            # Print the table using tabulate
+            file.write(tabulate(table, headers, tablefmt="simple"))
+            file.write("\n\n")
