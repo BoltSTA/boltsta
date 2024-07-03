@@ -25,12 +25,17 @@
 ## Here is a list of python packages required for characterization tool
 
 docopt
-pandas
+networkx
 numpy
-quantiphy
-tqdm
+json
+matplotlib
+# Verilog parser for reading and processing Verilog files
+verilog-parser
+# Liberty parser for reading and processing .lib files
+liberty-parser
+typing
+typing_extensions
 pyaml
 PyYAML
-typing_extensions
-networkx
-Pyarrow
+tabulate
+
