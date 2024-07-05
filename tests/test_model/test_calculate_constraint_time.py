@@ -1,12 +1,9 @@
 from boltsta import calculate_constraint_time
 from boltsta.readers import parse_liberty_file
 import pytest
-from liberty.parser import parse_liberty
-from liberty.types import *
 
 
 @pytest.fixture(scope="module")
-
 def lib_test():
     library = parse_liberty_file("tests/sky130_fd_sc_hd__ff_100C_1v65.lib")
     return library
@@ -23,6 +20,7 @@ def test_calculate_constraint_time_rise(lib_test):
         )
     assert setup_time == pytest.approx(0.1714661)
 
+
 def test_calculate_constraint_time_invalid_checking_type(lib_test):
     with pytest.raises(ValueError):
         calculate_constraint_time(
@@ -33,6 +31,7 @@ def test_calculate_constraint_time_invalid_checking_type(lib_test):
             constrained_pin_transition=1.5,
             related_pin_transition=0.010,
             )
+
 
 def test_calculate_constraint_time_negative_constrained_pin_transition(lib_test):
     with pytest.raises(ValueError):
@@ -45,6 +44,7 @@ def test_calculate_constraint_time_negative_constrained_pin_transition(lib_test)
             related_pin_transition=0.010,
             )
 
+
 def test_calculate_constraint_time_negative_related_pin_transition(lib_test):
     with pytest.raises(ValueError):
         calculate_constraint_time(
@@ -55,11 +55,7 @@ def test_calculate_constraint_time_negative_related_pin_transition(lib_test):
             constrained_pin_transition=1.5,
             related_pin_transition=-0.010,
             )
-        
 
-        
+
 if __name__ == '__main__':
     pytest.main()
-
-
-    
