@@ -27,14 +27,15 @@
 docopt
 networkx
 numpy
-json
+# json
 matplotlib
 # Verilog parser for reading and processing Verilog files
-verilog-parser
+# verilog-parser
 # Liberty parser for reading and processing .lib files
 liberty-parser
 typing
 typing_extensions
+lark
 pyaml
 PyYAML
 tabulate

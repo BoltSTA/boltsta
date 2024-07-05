@@ -20,33 +20,31 @@ def setup_test_data():
     ast = parse_modified_verilog(content)
     ast = modify_input_pins(ast, input_pins, output_pins)
     mod_input_pins = ['Y_B', 'Q_D', 'X_B', 'X_C_N', 'Y_A', 'Q_CLK', 'X_A']
-    port_to_node_to_instance = {'IN__0': [('_2_', 'sky130_fd_sc_hd__or3b_2', 'X_A')], 'IN__1': [
-        ('_2_', 'sky130_fd_sc_hd__or3b_2', 'X_B'), ('_6_', 'sky130_fd_sc_hd__nand2_2', 'Y_A')],
+    port_to_node_to_instance = {
+        'IN__0': [('_2_', 'sky130_fd_sc_hd__or3b_2', 'X_A')],
+        'IN__1': [('_2_', 'sky130_fd_sc_hd__or3b_2', 'X_B'),
+                  ('_6_', 'sky130_fd_sc_hd__nand2_2', 'Y_A')],
         'IN__2': [('_2_', 'sky130_fd_sc_hd__or3b_2', 'X_C_N'),
                   ('_4_', 'sky130_fd_sc_hd__or3b_2', 'X_A'),
-                  ('_6_', 'sky130_fd_sc_hd__nand2_2', 'Y_B')], '_1_': [
-                      ('_2_', 'sky130_fd_sc_hd__or3b_2', 'X'),
-                      ('_3_', 'sky130_fd_sc_hd__buf_1', 'X_A')], 'D__0': [
-                          ('_3_', 'sky130_fd_sc_hd__buf_1', 'X'),
-                          ('_9_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_D')], 'IN__4': [
-                              ('_4_', 'sky130_fd_sc_hd__or3b_2', 'X_B')], 'IN__3': [
-                                  ('_4_', 'sky130_fd_sc_hd__or3b_2', 'X_C_N')], '_0_': [
-                                    ('_4_', 'sky130_fd_sc_hd__or3b_2', 'X'),
-                                    ('_5_', 'sky130_fd_sc_hd__buf_1', 'X_A')], 'D__2': [
-                                        ('_5_', 'sky130_fd_sc_hd__buf_1', 'X'),
-                                        ('_7_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_D')], 'D__1': [
-                                            ('_6_', 'sky130_fd_sc_hd__nand2_2', 'Y'),
-                                            ('_8_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_D')], 'CLK': [
-                                                ('_7_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_CLK'),
-                                                ('_8_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_CLK'),
-                                                ('_9_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_CLK')
-                                                ], 'OUT3': [
-                                                    ('_7_', 'sky130_fd_sc_hd__dfxtp_2', 'Q')
-                                                    ], 'OUT2': [('_8_', 'sky130_fd_sc_hd__dfxtp_2',
-                                                                'Q')], 'OUT1': [(
-                                                                    '_9_',
-                                                                    'sky130_fd_sc_hd__dfxtp_2', 'Q'
-                                                                    )]}
+                  ('_6_', 'sky130_fd_sc_hd__nand2_2', 'Y_B')],
+        '_1_': [('_2_', 'sky130_fd_sc_hd__or3b_2', 'X'),
+                ('_3_', 'sky130_fd_sc_hd__buf_1', 'X_A')],
+        'D__0': [('_3_', 'sky130_fd_sc_hd__buf_1', 'X'),
+                 ('_9_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_D')],
+        'IN__4': [('_4_', 'sky130_fd_sc_hd__or3b_2', 'X_B')],
+        'IN__3': [('_4_', 'sky130_fd_sc_hd__or3b_2', 'X_C_N')],
+        '_0_': [('_4_', 'sky130_fd_sc_hd__or3b_2', 'X'),
+                ('_5_', 'sky130_fd_sc_hd__buf_1', 'X_A')],
+        'D__2': [('_5_', 'sky130_fd_sc_hd__buf_1', 'X'),
+                 ('_7_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_D')],
+        'D__1': [('_6_', 'sky130_fd_sc_hd__nand2_2', 'Y'),
+                 ('_8_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_D')],
+        'CLK': [('_7_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_CLK'),
+                ('_8_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_CLK'),
+                ('_9_', 'sky130_fd_sc_hd__dfxtp_2', 'Q_CLK')],
+        'OUT3': [('_7_', 'sky130_fd_sc_hd__dfxtp_2', 'Q')],
+        'OUT2': [('_8_', 'sky130_fd_sc_hd__dfxtp_2', 'Q')],
+        'OUT1': [('_9_', 'sky130_fd_sc_hd__dfxtp_2', 'Q')]}
     return ast, mod_input_pins, port_to_node_to_instance
 
 
