@@ -173,6 +173,9 @@ def find_all_paths_non_rec_pro(adjacency_dict,
         print(f'step1 adj_dict = {adjacency_dict}\n')
         print(f'adj_dict_keys -> {adjacency_dict.keys()}')
 
+    # initialize input, ouptut ports
+    input_ports = None
+    output_ports = None
     # Mode setup for 'IR' and 'RO'
     if mode != 'RR':
         adjacency_dict_keys = adjacency_dict.keys()
@@ -183,7 +186,7 @@ def find_all_paths_non_rec_pro(adjacency_dict,
 
     # setting target nodes
     targets = []
-    targets = set_targets(targets_file_name, mode, output_ports=output_ports)
+    targets = set_targets(targets_file_name, mode, output_ports)
     if show_steps:
         print(f'step2 targets = {targets}\n')
 

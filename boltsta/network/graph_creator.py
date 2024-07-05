@@ -1,10 +1,6 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from ..readers.verilog_reader import (
-    preprocess_verilog, parse_modified_verilog, extract_input_output_ports,
-    extract_input_output_pins_of_cells, modify_input_pins,
-    extract_mod_input_pins, extract_unique_internal_nodes, find_partial_match
-)
+from ..readers.verilog_reader import *
 
 
 # * 1 MAIN FUNCTION HERE!!
