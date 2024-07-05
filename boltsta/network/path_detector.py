@@ -285,7 +285,7 @@ def all_paths_info(G):
         adjacency_dict : dict
             The adjacency dictionary with nodes and their direct neighbors.
     """
-    targets_file_name = '/home/omar/python_environment/Verilog_Netlist/boltsta/boltsta/network/ff_names.txt'
+    targets_file_name = 'boltsta/network/ff_names.txt'
     adjacency_dict = create_adjacency_dict(G, 'cell')
     reg_reg = find_all_paths_non_rec_pro(adjacency_dict, targets_file_name, 'RR')
     in_reg = find_all_paths_non_rec_pro(adjacency_dict, targets_file_name, 'IR')
