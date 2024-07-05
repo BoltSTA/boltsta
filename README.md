@@ -14,7 +14,6 @@ BoltSTA Open Source Tool
   - [Folder Structure](#folder-structure)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
-    - [From PyPi](#from-pypi)
     - [Build From Source](#build-from-source)
   - [Script Usage](#script-usage)
     - [Example](#example)
