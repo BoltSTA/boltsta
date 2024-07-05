@@ -1,7 +1,6 @@
 from collections import deque
 from .graph_creator import graph_creation_func
 from .fanout import get_fanout_dict
-import networkx as nx
 
 
 # 1
@@ -208,7 +207,7 @@ def find_all_paths_non_rec_pro(adjacency_dict,
 def get_input_attr(G, paths):
     """
     get_input_attr function takes all the predetermined paths in the graph,
-    detects the edges of each path, and retrieves the 'input_pin' attribute 
+    detects the edges of each path, and retrieves the 'input_pin' attribute
     for each edge in the paths.
 
     arguments:
@@ -217,7 +216,7 @@ def get_input_attr(G, paths):
     output:
     all_attr_list: list of lists holding the 'input_pin' attribute for each edge in the paths
     """
-        # getting the edges first, in order to get the input attr later
+    # getting the edges first, in order to get the input attr later
     def get_path_edges(all_paths):
         """
         get_path_edges function takes all the predetermined paths in the graph,
@@ -235,8 +234,10 @@ def get_input_attr(G, paths):
             path_pairs.append(pairs)
 
         return path_pairs
-        # inline function
-    get_attr_list = lambda G, edge_list, attr: [G[edge[0]][edge[1]].get(attr, None) for edge in edge_list]
+
+    # inline function
+    def get_attr_list(G, edge_list, attr):
+        return [G[edge[0]][edge[1]].get(attr, None) for edge in edge_list]
 
     paths_edges = get_path_edges(paths)
     all_attr_list = []
@@ -284,7 +285,7 @@ def all_paths_info(G):
         adjacency_dict : dict
             The adjacency dictionary with nodes and their direct neighbors.
     """
-    targets_file_name = 'ff_names.txt'
+    targets_file_name = '/home/omar/python_environment/Verilog_Netlist/boltsta/boltsta/network/ff_names.txt'
     adjacency_dict = create_adjacency_dict(G, 'cell')
     reg_reg = find_all_paths_non_rec_pro(adjacency_dict, targets_file_name, 'RR')
     in_reg = find_all_paths_non_rec_pro(adjacency_dict, targets_file_name, 'IR')

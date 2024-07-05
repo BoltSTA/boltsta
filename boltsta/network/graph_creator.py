@@ -1,11 +1,15 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-from ..readers.verilog_reader import *
+from ..readers.verilog_reader import (
+    find_partial_match, preprocess_verilog, parse_modified_verilog,
+    extract_input_output_ports, extract_input_output_pins_of_cells,
+    modify_input_pins, extract_mod_input_pins, extract_unique_internal_nodes
+)
 
 
 # * 1 MAIN FUNCTION HERE!!
 def build_digraph(
-        ast, internal_connections, input_list, output_list, port_to_node_to_instance,
+        internal_connections, input_list, output_list, port_to_node_to_instance,
         mod_input_pins):
     """
     The core function that builds the graph representing the netlist.
@@ -152,7 +156,7 @@ def graph_creation_func(file_path):
 
     # Deleted design internal nets function and merged it with
     # this function
-    input_pins, output_pins, nets = extract_input_output_pins_of_cells(ast)
+    input_pins, output_pins = extract_input_output_pins_of_cells(ast)
 
     ast = modify_input_pins(ast, input_pins, output_pins)
     mod_input_pins, port_to_node_to_instance = extract_mod_input_pins(ast)
@@ -161,9 +165,8 @@ def graph_creation_func(file_path):
         ast, mod_input_pins, port_to_node_to_instance
     )
 
-    G, pos, node_cells, edge_labels = build_digraph(ast, internal_connections,
+    G, pos, node_cells, edge_labels = build_digraph(internal_connections,
                                                     input_list, output_list,
                                                     port_to_node_to_instance,
                                                     mod_input_pins)
-    # discuss if the input, output lists are even needed
     return G

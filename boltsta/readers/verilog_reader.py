@@ -1,7 +1,7 @@
 import re  # Regular expressions library for pattern matching and string manipulation
 import os  # OS library for file handling operations
 import numpy as np  # NumPy library for numerical operations and array handling
-from boltsta.verilog_parser.parser import parse_verilog  # Importing the Verilog parser
+from .parser import parse_verilog  # Importing the Verilog parser
 
 
 def preprocess_verilog(file_path):
@@ -140,7 +140,7 @@ def extract_input_output_pins_of_cells(ast):
         ast (object): The netlist handler (AST).
 
     Returns:
-        tuple: A tuple containing three lists - input_pins, output_pins, and nets.
+        tuple: A tuple containing two lists - input_pins, output_pins
 
     Raises:
         ValueError: If the AST structure is invalid.
@@ -154,14 +154,9 @@ def extract_input_output_pins_of_cells(ast):
         # Initialize empty lists to store input pins, output pins, and nets
         input_pins = []  # List to hold input pins
         output_pins = []  # List to hold output pins
-        nets = []  # List to hold internal nets
 
         # Loop through module instances in the AST
         for inst in ast.modules[0].module_instances:
-            # Loop through ports of the current instance and add them to nets list
-            for port, node in inst.ports.items():
-                nets.append(str(node))  # Append each port node to the nets list
-
             # Get a list of port names for the current instance
             a = list(inst.ports.keys())  # List of ports for the current instance
 
@@ -186,7 +181,7 @@ def extract_input_output_pins_of_cells(ast):
             output_pins.remove("RESET_B")  # Remove 'RESET_B' from output pins if present
         output_pins.append("Q")  # Ensure 'Q' is in the output pins list
 
-        return input_pins, output_pins, nets  # Return the input pins, output pins, and nets
+        return input_pins, output_pins  # Return the input pins, output pins
 
     except Exception as e:
         # Raise an error if there is an issue extracting pins
