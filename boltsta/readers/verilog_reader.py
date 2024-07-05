@@ -151,7 +151,7 @@ def extract_input_output_pins_of_cells(ast):
             # Raise an error if the AST structure is not valid
             raise ValueError("Invalid Netlist structure.")
 
-        # Initialize empty lists to store input pins, output pins, and nets
+        # Initialize empty lists to store input pins and output pins
         input_pins = []  # List to hold input pins
         output_pins = []  # List to hold output pins
 

@@ -17,15 +17,12 @@ def setup_verilog_data():
     return ast
 
 
-@pytest.mark.parametrize("expected_input_pins, expected_output_pins, expected_nets", [
+@pytest.mark.parametrize("expected_input_pins, expected_output_pins", [
     # Test case 1
-    (['B', 'C_N', 'CLK', 'D', 'A', 'RESET_B'], ['Q', 'X', 'Y', 'Q'],
-     ['IN__0', 'IN__1', 'IN__2', '_1_', '_1_', 'D__0', 'IN__2', 'IN__4', 'IN__3', '_0_', '_0_',
-      'D__2', 'IN__1', 'IN__2', 'D__1', 'CLK', 'D__2', 'OUT3',
-      'CLK', 'D__1', 'OUT2', 'CLK', 'D__0', 'OUT1'])
+    (['B', 'C_N', 'CLK', 'D', 'A', 'RESET_B'], ['Q', 'X', 'Y', 'Q'])
 ])
 def test_extract_input_output_pins_of_cells(setup_verilog_data, expected_input_pins,
-                                            expected_output_pins, expected_nets):
+                                            expected_output_pins):
     """
     Test function for extract_input_output_pins_of_cells.
 
@@ -39,10 +36,9 @@ def test_extract_input_output_pins_of_cells(setup_verilog_data, expected_input_p
           and expected_output_pins respectively.
     """
     ast = setup_verilog_data
-    actual_input_pins, actual_output_pins, actual_nets = extract_input_output_pins_of_cells(ast)
+    actual_input_pins, actual_output_pins = extract_input_output_pins_of_cells(ast)
     assert sorted(actual_input_pins) == sorted(expected_input_pins)
     assert sorted(actual_output_pins) == sorted(expected_output_pins)
-    assert sorted(actual_nets) == sorted(expected_nets)
 
 
 if __name__ == '__main__':
