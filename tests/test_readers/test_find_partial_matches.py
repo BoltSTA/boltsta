@@ -10,8 +10,8 @@ def setup_test_data():
     Returns:
         tuple: Tuple containing nets list and input_list.
     """
-    nets = ['IN1', 'IN2', 'IN3', '_1_', 'D1', 'IN3', 'IN5', 'IN4', '_0_', 'D3', 'IN2', 'IN3', 'D2',
-            'CLK', 'OUT3', 'D2', 'OUT2', 'D1', 'OUT1']
+    nets = ['IN1', 'IN2', 'IN3', '_1_', 'D1', 'IN3', 'IN5', 'IN4', '_0_',
+            'D3', 'IN2', 'IN3', 'D2', 'CLK', 'OUT3', 'D2', 'OUT2', 'D1', 'OUT1']
     input_list = ['CLK', 'IN1', 'IN2', 'IN3', 'IN4', 'IN5']
     return nets, input_list
 

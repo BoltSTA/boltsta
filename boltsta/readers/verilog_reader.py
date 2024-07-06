@@ -1,7 +1,7 @@
 import re  # Regular expressions library for pattern matching and string manipulation
 import os  # OS library for file handling operations
 import numpy as np  # NumPy library for numerical operations and array handling
-from verilog_parser.parser import parse_verilog  # Importing the external Verilog parser
+from .parser import parse_verilog  # Importing the Verilog parser
 
 
 def preprocess_verilog(file_path):
@@ -134,14 +134,13 @@ def extract_input_output_ports(ast):
 
 def extract_input_output_pins_of_cells(ast):
     """
-    Extracts the input and output pins of the design cells.
-    These are to be used in STA calculation.
+    Extract the input and output pins of the design cells to be used in STA calculation.
 
     Args:
         ast (object): The netlist handler (AST).
 
     Returns:
-        tuple: A tuple containing two lists - input_pins and output_pins.
+        tuple: A tuple containing two lists - input_pins, output_pins
 
     Raises:
         ValueError: If the AST structure is invalid.
@@ -152,20 +151,18 @@ def extract_input_output_pins_of_cells(ast):
             # Raise an error if the AST structure is not valid
             raise ValueError("Invalid Netlist structure.")
 
-        # Initialize empty lists to store input and output pins
+        # Initialize empty lists to store input pins and output pins
         input_pins = []  # List to hold input pins
         output_pins = []  # List to hold output pins
-        # Initialize an empty list to store internal nets
-        nets = []  # List to hold internal nets
+
         # Loop through module instances in the AST
         for inst in ast.modules[0].module_instances:
-            # Loop through ports of the current instance and add them to nets list
-            for port, node in inst.ports.items():
-                nets.append(str(node))  # Append each port node to the nets list
             # Get a list of port names for the current instance
             a = list(inst.ports.keys())  # List of ports for the current instance
+
             # The last port in the list is considered an output pin
             output_pins.append(a[-1])  # Append the last port name as an output pin
+
             # Loop through all but the last port to consider them as input pins
             for i in np.arange(len(a) - 1):  # Loop through all ports except the last
                 input_pins.append(a[i])  # Append the port name as an input pin
@@ -184,7 +181,7 @@ def extract_input_output_pins_of_cells(ast):
             output_pins.remove("RESET_B")  # Remove 'RESET_B' from output pins if present
         output_pins.append("Q")  # Ensure 'Q' is in the output pins list
 
-        return input_pins, output_pins, nets  # Return the input and output pin lists
+        return input_pins, output_pins  # Return the input pins, output pins
 
     except Exception as e:
         # Raise an error if there is an issue extracting pins
@@ -196,24 +193,27 @@ def modify_input_pins(ast, input_pins, output_pins):
     Modifies the input pins of the design by adding the corresponding output pin as a prefix.
     This modification is made to facilitate the STA calculation and to pass the modified
     graph to the STA function.
+
     Args:
-        ast (ast): the netlist handler
+        ast (object): The netlist handler (AST).
         input_pins (list): List of input pins.
         output_pins (list): List of output pins.
 
     Returns:
-        list: Modified input pins list.
+        object: Modified AST with updated input pin names.
+
     Raises:
-        ValueError: If input_pins or output_pins is not a list.
+        ValueError: If input_pins or output_pins is not a list, or if the AST structure is invalid.
     """
     try:
+        # Validate AST structure
         if not hasattr(ast, 'modules') or not ast.modules:
-            # Raise an error if the AST structure is not valid
             raise ValueError("Invalid Netlist structure.")
 
+        # Validate input arguments
         if not isinstance(input_pins, list) or not isinstance(output_pins, list):
-            # Raise an error if inputs are not valid lists
             raise ValueError("input_pins and output_pins must be lists.")
+
         # Access the first module in the AST
         module = ast.modules[0]
 
@@ -248,81 +248,77 @@ def modify_input_pins(ast, input_pins, output_pins):
         # Return the modified AST
         return ast
     except Exception as e:
+        # Raise a generic exception if any error occurs during the process
         raise Exception(f"Error in modify_input_pins: {e}")
 
 
 def extract_mod_input_pins(ast):
     """
-    Extracts the modified input pins of the design cells
-    by adding the corresponding output pin as a prefix.
-    This is done again to remove the output 'Q' from these
-    modified inputs and deal with the correct version of
-    the cells' input pins.
+    Extracts and modifies the input pins of the design cells by adding the corresponding
+    output pin as a prefix. This function also handles the removal of the output pin 'Q'
+    from these modified inputs to ensure the correct version of the cells' input pins is used.
 
     Args:
         ast (object): The netlist handler (AST).
 
     Returns:
-        list: Modified input pins list.
+        tuple: A tuple containing:
+            - list: Modified input pins list.
+            - dict: A dictionary mapping ports to instance names and modules.
 
     Raises:
         ValueError: If the AST structure is invalid.
     """
     try:
-        # Check if AST is of expected structure
+        # Check if the AST is structured correctly
         if not hasattr(ast, 'modules') or not ast.modules:
-            # Raise an error if the AST structure is not valid
             raise ValueError("Invalid Netlist structure.")
 
-        # Initialize an empty list to store modified input pins
         mod_input_pins = []  # List to hold modified input pins
-        # Initialize a dictionary to map ports to instance names
         port_to_node_to_instance = {}  # Dictionary to map ports to instances
-        # Loop through module instances in the AST
+
+        # Iterate over the module instances in the AST
         for inst in ast.modules[0].module_instances:
-            # Get a list of port names for the current instance
-            a = list(inst.ports.keys())  # List of ports for the current instance
-            # Loop through all but the last port to consider them as input pins
-            for i in np.arange(len(a) - 1):
-                # Append each port name to the list of modified input pins
-                mod_input_pins.append(a[i])
-                # Modify the input pin name by adding the output pin as a prefix
-                a[i] = a[-1] + "_" + a[i]  # Combine output pin name with input pin name
-            # Loop through module instances in the AST
-            # Loop through ports of the current instance and add them to the dictionary
+            port_names = list(inst.ports.keys())  # List of ports for the current instance
+
+            # Modify input pins by adding the output pin as a prefix
+            for i in range(len(port_names) - 1):
+                mod_input_pins.append(port_names[i])
+                port_names[i] = f"{port_names[-1]}_{port_names[i]}"
+
+            # Map ports to instances and modules
             for port, node in inst.ports.items():
                 port_to_node_to_instance.setdefault(str(node), []).append(
-                    (inst.instance_name, inst.module_name, port)  # Map port to instance and module
+                    (inst.instance_name, inst.module_name, port)
                 )
 
         # Remove duplicate pins by converting the list to a set
         mod_input_pins = list(set(mod_input_pins))
 
-        # Special handling to remove 'Q' from the modified input pins
+        # Special handling to remove 'Q' from the modified input pins if present
         if "Q" in mod_input_pins:
-            mod_input_pins.remove("Q")  # Remove 'Q' from the modified input pins if present
+            mod_input_pins.remove("Q")
 
-        # Return the list of modified input pins
-        return mod_input_pins, port_to_node_to_instance  # Return the modified input pins list
+        return mod_input_pins, port_to_node_to_instance
+
     except Exception as e:
         raise Exception(f"Error in extract_mod_input_pins: {e}")
 
 
 def extract_unique_internal_nodes(ast, mod_input_pins, port_to_node_to_instance):
     """
-    Extracts the unique internal connections of the
-    verilog design. These connections are to be used to build
-    the graph representing the verilog design. Also builds an
-    important dict (port_to_node_to_instance) which binds ports
-    to the design cells to make searching for nodes efficient.
+    Extracts the unique internal connections of the Verilog design. These connections
+    are used to build the graph representing the Verilog design. Also builds a dictionary
+    (port_to_node_to_instance) which binds ports to the design cells to make searching for
+    nodes efficient.
 
     Args:
         ast (object): The netlist handler (AST).
         mod_input_pins (list): List containing cells' modified input pins.
+        port_to_node_to_instance (dict): Dictionary mapping ports to instances.
 
     Returns:
-        tuple: A tuple containing the list of unique internal connections
-        and the port-to-instance mapping.
+        list: A list of unique internal connections.
 
     Raises:
         ValueError: If the AST structure is invalid or mod_input_pins is not a list.
@@ -337,23 +333,28 @@ def extract_unique_internal_nodes(ast, mod_input_pins, port_to_node_to_instance)
         if not isinstance(mod_input_pins, list):
             # Raise an error if mod_input_pins is not a list
             raise ValueError("Modified input pins must be a list.")
+
         # Get all signal names from net declarations in the AST
         all_signals = [declaration.net_name for declaration in ast.modules[0].net_declarations]
 
         # Get the internal nodes by excluding port names from the signal names
         internal_nodes = set(all_signals) - set(ast.modules[0].port_list)
+
         # Initialize a list to store internal connections
         internal_connections = []  # List to hold internal connections
+
         # Loop through internal nodes
-        for k in internal_nodes:
+        for node in internal_nodes:
             # Get the connections for the current node from the dictionary
-            connections = port_to_node_to_instance.get(k, [])
+            connections = port_to_node_to_instance.get(node, [])
+
             # Loop through the connections to find pairs of connected instances
             for i, (conn1, module1, port1) in enumerate(connections):
                 for conn2, module2, port2 in connections[i + 1:]:
                     # Skip connections between input pins only
                     if port1 in mod_input_pins and port2 in mod_input_pins:
                         continue  # Skip if both ports are modified input pins
+
                     # Handle special case where 'Q' is an output pin
                     if port2 == "Q":
                         # Handle special case for 'Q'
@@ -362,7 +363,7 @@ def extract_unique_internal_nodes(ast, mod_input_pins, port_to_node_to_instance)
                         # Add the connection
                         internal_connections.append([conn1, module1, conn2, module2, port2])
 
-        # Return the list of internal connections and the port-to-instance mapping
+        # Return the list of internal connections
         return internal_connections
 
     except Exception as e:
