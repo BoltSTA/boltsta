@@ -1,6 +1,5 @@
 from typing import Dict, Tuple
-from ..utils import *
-from ..network import fanout
+from boltsta.utils import *
 
 
 def calculate_combinational_delay(
@@ -365,9 +364,10 @@ def check_timing(
     return setup_violations
 
 
-def build_paths_delay_dict1(
+def build_paths_delay_dict(
     paths: list[list[str]],
     paths_attributes: list[list[str]],
+    fanout: dict[str, list[str]],
     cell_pin_mapping: dict[str, dict[str, dict[str, dict[str, float]]]],
     library: str,
     related_pin_time: float = 0.04,
@@ -389,6 +389,11 @@ def build_paths_delay_dict1(
         dict: A dictionary where keys are path identifiers (e.g., "path1") and values are dictionaries
               mapping cell names to their delays.
     """
+
+    if related_pin_time < 0 or input_transition_time < 0:
+        raise ValueError(
+            "Related pin transition time and input transition time must be non-negative."
+        )
 
     # Initialize the dictionary to store delays for each path
     paths_delay = {}
