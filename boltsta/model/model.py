@@ -1,6 +1,7 @@
 from typing import Dict, Tuple
 from ..utils import *
 from ..network import fanout
+from ..readers import parse_liberty_file
 
 
 def calculate_combinational_delay(
@@ -92,8 +93,7 @@ def calculate_stage_delay(
     tuple: Updated transition time, delay for the current stage, and updated transition type.
     """
     output_capacitance = get_output_capacitance(
-        cell_name=path[stage_index + 2].split(",")[1],
-        output_pin_name=path_attribute[stage_index + 1],
+        fanout=fanout[path[stage_index + 1]],
         library=library,
     )
     timing_sense_type = get_timing_sense(
@@ -455,3 +455,63 @@ def build_paths_delay_dict1(
                 paths_delay[path_key][cell] = delay
 
     return paths_delay
+
+
+def Model(
+    pdk_path: str,
+    paths: list[list],
+    paths_attribute: list[list],
+    input_transition_time: float,
+    related_pin_time: float,
+    output_file_path: str,
+    clock_rise_edge: float = 0.0,
+    clock_network_delay: float = 0.0,
+    clock_uncertainty: float = 0.3,
+    clock_period: float = 10.0,
+) -> None:
+    """
+    Model the timing analysis for a given design using the specified PDK and paths.
+
+    Parameters:
+    pdk_path (str): Path to the liberty file of the PDK.
+    paths (list[list]): A list of lists, where each inner list represents a sequence of cells and pins in a path.
+    paths_attribute (list[list]): A list of lists representing the attributes of each pin in the paths.
+    input_transition_time (float): The input transition time.
+    related_pin_time (float): The related pin time.
+    output_file_path (str): The path where the timing report will be generated.
+    clock_rise_edge (float, optional): The clock rise edge time. Defaults to 0.0.
+    clock_network_delay (float, optional): The clock network delay. Defaults to 0.0.
+    clock_uncertainty (float, optional): The clock uncertainty. Defaults to 0.3.
+    clock_period (float, optional): The clock period. Defaults to 10.0.
+
+    Returns:
+    None
+    """
+    # Parse the liberty file
+    pdk = parse_liberty_file(pdk_path)
+
+    # Extract cell pin mapping from the parsed liberty file
+    cell_mapping = extract_cell_pin_mapping(pdk)
+
+    # Build the path delays dictionary
+    path_delays = build_paths_delay_dict1(
+        paths,
+        paths_attribute,
+        cell_mapping,
+        pdk,
+        related_pin_time,
+        input_transition_time,
+    )
+
+    # Generate the timing report
+    generate_timing_report(
+        path_delays,
+        output_file_path,
+        clock_rise_edge,
+        clock_network_delay,
+        clock_uncertainty,
+        clock_period,
+    )
+
+    # Print the output file path
+    print(output_file_path)
