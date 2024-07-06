@@ -228,9 +228,9 @@ def get_timing_sense(cells_info, cell_name, input_pin_name):
             return timing_sense
     return None
 
-
+ 
 def get_output_capacitance(
-    fanout,
+    fanout: list[str],
     library: str,
 ) -> float:
     """
@@ -239,10 +239,8 @@ def get_output_capacitance(
     Parameters:
         fanout (list): A list representing the sequence of cells and their output pins in the format 'prefix,cell_name,output_pin'.
         library (str): The name of the library containing the cell data.
-
     Returns:
         float: The total output capacitance of the specified pins.
-
     Raises:
         KeyError: If the specified pin or cell is not found in the library.
     """
@@ -252,7 +250,6 @@ def get_output_capacitance(
         output_pin_name = cell.split(",")[2]
         cell_name = cell.split(",")[1]
         parts = output_pin_name.split("_")
-
         if len(parts) == 3:
             input_pin_name = f"{parts[1]}_{parts[2]}"
         else:
@@ -341,7 +338,8 @@ def generate_timing_report(
     clock_period: float = 10.0,
 ):
     """
-    Generates a timing report for the given delays using the tabulate library and writes it to a text file.
+    Generates a timing report for the given delays using the tabulate library and
+    writes it to a text file.
 
     Args:
         delays (dict): A dictionary where keys are path identifiers (e.g., "path1") and values

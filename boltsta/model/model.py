@@ -2,6 +2,7 @@ from typing import Dict, Tuple
 from ..utils import *
 from ..network import fanout
 from ..readers import parse_liberty_file
+from boltsta.utils import *
 
 
 def calculate_combinational_delay(
@@ -187,6 +188,13 @@ def calculate_clk2q_delay(
     Returns:
         tuple or None: The rise/fall delay and cell rise/fall delay, or None if cell name or output pin name not found.
     """
+    if input_transition_time < 0 or output_capacitance < 0:
+        raise ValueError(
+            "Input transition time and output capacitance must be non-negative."
+        )
+    
+    if cell_name not in cell_timing_data:
+        raise ValueError(f"Cell name '{cell_name}' not found in the cell timing data.")
 
     # Check if the cell name exists in the mapping
     if cell_name in cell_timing_data:
@@ -195,6 +203,12 @@ def calculate_clk2q_delay(
         # Ensure the output pin name is either Q_CLK or Q_CLK_N
         if output_pin_name not in cell_data:
             output_pin_name = "Q_CLK_N"
+            
+        if output_pin_name not in cell_data:
+            raise ValueError(
+                f"Output pin name '{output_pin_name}' not found for cell '{cell_name}'."
+            )    
+            
         # Check if the adjusted output pin name exists for the given cell
         if output_pin_name in cell_data:
             timing_data = cell_data[output_pin_name]
@@ -236,6 +250,13 @@ def calculate_constraint_time(
     Raises:
         ValueError: If the cell name or input pin name is not found.
     """
+    if constrained_pin_transition < 0 or related_pin_transition < 0:
+        raise ValueError(
+            "Constrained pin transition time and related pin transition time must be non-negative."
+        )
+    
+    if checking_type not in {"setup_checking", "hold_checking"}:
+        raise ValueError("Invalid checking type. Please use 'setup_checking' or 'hold_checking'.")
 
     # Retrieve timing information for the specified cell, input pin, and checking type
     timing_information = get_constraint_timing(
@@ -345,9 +366,10 @@ def check_timing(
     return setup_violations
 
 
-def build_paths_delay_dict1(
+def build_paths_delay_dict(
     paths: list[list[str]],
     paths_attributes: list[list[str]],
+    fanout: dict[str, list[str]],
     cell_pin_mapping: dict[str, dict[str, dict[str, dict[str, float]]]],
     library: str,
     related_pin_time: float = 0.04,
@@ -369,6 +391,11 @@ def build_paths_delay_dict1(
         dict: A dictionary where keys are path identifiers (e.g., "path1") and values are dictionaries
               mapping cell names to their delays.
     """
+
+    if related_pin_time < 0 or input_transition_time < 0:
+        raise ValueError(
+            "Related pin transition time and input transition time must be non-negative."
+        )
 
     # Initialize the dictionary to store delays for each path
     paths_delay = {}
