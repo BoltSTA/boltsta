@@ -228,36 +228,28 @@ def get_timing_sense(cells_info, cell_name, input_pin_name):
             return timing_sense
     return None
 
-
+ 
 def get_output_capacitance(
     fanout: list[str],
     library: str,
 ) -> float:
     """
-    Retrieves the output capacitance for a given cell and output pin.
+    Retrieve the output capacitance for a given set of cells and their output pins.
 
     Parameters:
-        cell_name (str): The name of the cell for which output capacitance is being retrieved.
-        output_pin_name (str): The name of the output pin
-        (formatted as 'prefix_pin' or 'prefix_subprefix_pin').
-        library (str): The name of the library containing the cell.
-
+        fanout (list): A list representing the sequence of cells and their output pins in the format 'prefix,cell_name,output_pin'.
+        library (str): The name of the library containing the cell data.
     Returns:
-        float: The output capacitance of the specified pin.
-
+        float: The total output capacitance of the specified pins.
     Raises:
         KeyError: If the specified pin or cell is not found in the library.
     """
-
-    capacitance = 0.0
-    # Split the output pin name to determine the input pin name
-
+    capacitance = 0
+    # Iterate through each cell in the fanout list
     for cell in fanout:
         output_pin_name = cell.split(",")[2]
-
         cell_name = cell.split(",")[1]
         parts = output_pin_name.split("_")
-
         if len(parts) == 3:
             input_pin_name = f"{parts[1]}_{parts[2]}"
         else:
@@ -273,7 +265,7 @@ def get_output_capacitance(
         output_capacitance = pin["capacitance"]
         capacitance += output_capacitance
 
-    return output_capacitance
+    return capacitance
 
 
 def get_constraint_timing(
