@@ -515,13 +515,13 @@ def Model(
     None
     """
     # Parse the liberty file
-    pdk = pdk_path
+    pdk = parse_liberty_file(pdk_path)
 
     # Extract cell pin mapping from the parsed liberty file
     cell_mapping = extract_cell_pin_mapping(pdk)
 
     # Build the path delays dictionary
-    path_delays = build_paths_delay_dict(
+    path_delays = build_paths_delay_dict1(
         paths,
         paths_attribute,
         cell_mapping,
